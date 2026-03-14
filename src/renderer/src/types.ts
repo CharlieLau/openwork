@@ -103,6 +103,7 @@ export interface ToolResult {
 export interface HITLRequest {
   id: string
   tool_call: ToolCall
+  tool_calls?: ToolCall[]  // Support multiple pending tool calls
   allowed_decisions: HITLDecision["type"][]
 }
 

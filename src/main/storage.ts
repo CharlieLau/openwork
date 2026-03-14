@@ -7,10 +7,11 @@ const OPENWORK_DIR = join(homedir(), ".openwork")
 const ENV_FILE = join(OPENWORK_DIR, ".env")
 
 // Environment variable names for each provider
-const ENV_VAR_NAMES: Record<ProviderId, string> = {
+const ENV_VAR_NAMES: Record<string, string> = {
   anthropic: "ANTHROPIC_API_KEY",
   openai: "OPENAI_API_KEY",
   google: "GOOGLE_API_KEY",
+  zhipu: "ZHIPU_API_KEY",
   ollama: "" // Ollama doesn't require an API key
 }
 

@@ -665,33 +665,38 @@ export class ElectronIPCTransport implements UseStreamTransport {
 
         // For each action request (tool call) that needs approval
         if (actionRequests?.length) {
-          // Get the first action request for now (can be extended for batch approvals)
+          // Collect all pending tool calls for batch approval
+          const toolCalls = actionRequests.map((action) => {
+            // The actionRequest doesn't include tool_call.id - look up from tracked tool calls
+            let toolCallId: string | undefined
+
+            // Find the tool call ID from our tracked completed tool calls
+            const trackedToolCalls = this.completedToolCallsByName.get(action.name)
+
+            if (trackedToolCalls && trackedToolCalls.length > 0) {
+              // Get the most recent tool call with this name
+              const lastTracked = trackedToolCalls[trackedToolCalls.length - 1]
+              toolCallId = lastTracked.id
+            }
+
+            return {
+              id: toolCallId || crypto.randomUUID(),
+              name: action.name,
+              args: action.args || {}
+            }
+          })
+
           const firstAction = actionRequests[0]
           const reviewConfig = reviewConfigs?.find((rc) => rc.actionName === firstAction.name)
-
-          // The actionRequest doesn't include tool_call.id - look up from tracked tool calls
-          let toolCallId: string | undefined
-
-          // Find the tool call ID from our tracked completed tool calls
-          const trackedToolCalls = this.completedToolCallsByName.get(firstAction.name)
-
-          if (trackedToolCalls && trackedToolCalls.length > 0) {
-            // Get the most recent tool call with this name
-            const lastTracked = trackedToolCalls[trackedToolCalls.length - 1]
-            toolCallId = lastTracked.id
-          }
 
           events.push({
             event: "custom",
             data: {
               type: "interrupt",
               request: {
-                id: toolCallId || crypto.randomUUID(),
-                tool_call: {
-                  id: toolCallId,
-                  name: firstAction.name,
-                  args: firstAction.args || {}
-                },
+                id: toolCalls[0].id,
+                tool_call: toolCalls[0],
+                tool_calls: toolCalls,  // All pending tool calls
                 allowed_decisions: reviewConfig?.allowedDecisions || ["approve", "reject", "edit"]
               }
             }

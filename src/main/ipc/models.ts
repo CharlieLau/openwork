@@ -23,7 +23,8 @@ const store = new Store({
 const PROVIDERS: Omit<Provider, "hasApiKey">[] = [
   { id: "anthropic", name: "Anthropic" },
   { id: "openai", name: "OpenAI" },
-  { id: "google", name: "Google" }
+  { id: "google", name: "Google" },
+  { id: "zhipu", name: "Zhipu AI (智谱)" }
 ]
 
 // Available models configuration (updated Jan 2026)
@@ -200,6 +201,39 @@ const AVAILABLE_MODELS: ModelConfig[] = [
     provider: "google",
     model: "gemini-2.5-flash-lite",
     description: "Fast, low-cost, high-performance model",
+    available: true
+  },
+  // Zhipu AI GLM models
+  {
+    id: "glm-5",
+    name: "GLM-5",
+    provider: "zhipu",
+    model: "glm-5",
+    description: "智谱 AI 最强模型，适合复杂推理和创作任务",
+    available: true
+  },
+  {
+    id: "glm-4.7",
+    name: "GLM-4.7",
+    provider: "zhipu",
+    model: "glm-4.7",
+    description: "高性价比模型，速度快成本低，适合大规模调用",
+    available: true
+  },
+  {
+    id: "glm-4.5-air",
+    name: "GLM-4.5 Air",
+    provider: "zhipu",
+    model: "glm-4.5-air",
+    description: "平衡性能与成本的中档模型",
+    available: true
+  },
+  {
+    id: "glm-4-0520",
+    name: "GLM-4 0520",
+    provider: "zhipu",
+    model: "glm-4-0520",
+    description: "GLM-4 系列基础版本",
     available: true
   }
 ]

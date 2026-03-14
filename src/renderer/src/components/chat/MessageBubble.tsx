@@ -117,8 +117,11 @@ export function MessageBubble({
           <div className="space-y-2 overflow-hidden">
             {message.tool_calls!.map((toolCall, index) => {
               const result = toolResults?.get(toolCall.id)
-              const pendingId = pendingApproval?.tool_call?.id
-              const needsApproval = Boolean(pendingId && pendingId === toolCall.id)
+              // Check if this tool call is in the pending list
+              const pendingToolCalls = pendingApproval?.tool_calls ||
+                (pendingApproval?.tool_call ? [pendingApproval.tool_call] : [])
+              const needsApproval = pendingToolCalls.some(tc => tc.id === toolCall.id)
+              const isFirstPending = needsApproval && pendingToolCalls[0]?.id === toolCall.id
               return (
                 <ToolCallRenderer
                   key={`${toolCall.id || `tc-${index}`}-${needsApproval ? "pending" : "done"}`}
@@ -126,7 +129,9 @@ export function MessageBubble({
                   result={result?.content}
                   isError={result?.is_error}
                   needsApproval={needsApproval}
-                  onApprovalDecision={needsApproval ? onApprovalDecision : undefined}
+                  // Only show approval UI on the first pending tool call
+                  onApprovalDecision={isFirstPending ? onApprovalDecision : undefined}
+                  pendingCount={isFirstPending ? pendingToolCalls.length : undefined}
                 />
               )
             })}

@@ -26,6 +26,7 @@ interface ToolCallRendererProps {
   isError?: boolean
   needsApproval?: boolean
   onApprovalDecision?: (decision: "approve" | "reject" | "edit") => void
+  pendingCount?: number  // Number of pending tool calls to approve together
 }
 
 const TOOL_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -294,7 +295,8 @@ export function ToolCallRenderer({
   result,
   isError,
   needsApproval,
-  onApprovalDecision
+  onApprovalDecision,
+  pendingCount
 }: ToolCallRendererProps): React.JSX.Element | null {
   // Defensive: ensure args is always an object
   const args = toolCall?.args || {}
@@ -642,13 +644,13 @@ export function ToolCallRenderer({
               className="px-3 py-1.5 text-xs border border-border rounded-sm hover:bg-background-interactive transition-colors"
               onClick={handleReject}
             >
-              Reject
+              Reject{pendingCount && pendingCount > 1 ? ` All (${pendingCount})` : ""}
             </button>
             <button
               className="px-3 py-1.5 text-xs bg-status-nominal text-background rounded-sm hover:bg-status-nominal/90 transition-colors"
               onClick={handleApprove}
             >
-              Approve & Run
+              Approve{pendingCount && pendingCount > 1 ? ` All (${pendingCount})` : ""} & Run
             </button>
           </div>
         </div>

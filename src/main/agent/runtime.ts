@@ -7,6 +7,8 @@ import { ChatOpenAI } from "@langchain/openai"
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai"
 import { SqlJsSaver } from "../checkpointer/sqljs-saver"
 import { LocalSandbox } from "./local-sandbox"
+import * as path from "path"
+import { existsSync } from "fs"
 
 import type * as _lcTypes from "langchain"
 import type * as _lcMessages from "@langchain/core/messages"
@@ -89,7 +91,11 @@ function getModelInstance(
     }
     return new ChatOpenAI({
       model,
-      openAIApiKey: apiKey
+      openAIApiKey: apiKey,
+      configuration: {
+        baseURL: "https://aigc.sankuai.com/v1/openai/native",
+        apiKey: apiKey
+      }
     })
   } else if (model.startsWith("gemini")) {
     const apiKey = getApiKey("google")
@@ -100,6 +106,22 @@ function getModelInstance(
     return new ChatGoogleGenerativeAI({
       model,
       apiKey: apiKey
+    })
+  } else if (model.startsWith("glm")) {
+    const apiKey = getApiKey("zhipu")
+    console.log("[Runtime] Zhipu API key present:", !!apiKey)
+    if (!apiKey) {
+      throw new Error("Zhipu API key not configured")
+    }
+    // GLM models use OpenAI-compatible API
+    // Need to set both apiKey and configuration.apiKey for custom baseURL
+    return new ChatOpenAI({
+      model,
+      apiKey: apiKey,
+      configuration: {
+        baseURL: "https://open.bigmodel.cn/api/paas/v4",
+        apiKey: apiKey
+      }
     })
   }
 
@@ -163,6 +185,23 @@ export async function createAgentRuntime(options: CreateAgentRuntimeOptions) {
 
 The workspace root is: ${workspacePath}`
 
+  // Try to find .agents/skills directory
+  // Priority: workspacePath/.agents/skills > workspacePath/../.agents/skills
+  let skills: string[] | undefined
+  const workspaceSkillsPath = path.join(workspacePath, ".agents", "skills")
+  const parentSkillsPath = path.join(workspacePath, "..", ".agents", "skills")
+
+  if (existsSync(workspaceSkillsPath)) {
+    // Use POSIX path (forward slashes) relative to backend root
+    skills = ["/.agents/skills"]
+    console.log("[Runtime] Found skills at:", workspaceSkillsPath)
+  } else if (existsSync(parentSkillsPath)) {
+    skills = ["/.agents/skills"]
+    console.log("[Runtime] Found skills at:", path.resolve(parentSkillsPath))
+  } else {
+    console.log("[Runtime] No skills directory found")
+  }
+
   const agent = createDeepAgent({
     model,
     checkpointer,
@@ -170,6 +209,8 @@ The workspace root is: ${workspacePath}`
     systemPrompt,
     // Custom filesystem prompt for absolute paths (requires deepagents update)
     filesystemSystemPrompt,
+    // Skills directories (POSIX paths relative to backend root)
+    skills,
     // Require human approval for all shell commands
     interruptOn: { execute: true }
   } as Parameters<typeof createDeepAgent>[0])
